@@ -32,7 +32,16 @@ class HomeWidget extends StatelessWidget {
             SizedBox(
                 width: 250,
                 height: 250,
-                child: CircleProgress(segments, randomData[today])),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [CircleProgress(segments, randomData[today]),
+                  Text("${randomData[today].length} / $segments",
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  )
+                ])),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Card(
