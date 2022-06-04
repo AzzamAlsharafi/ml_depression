@@ -12,15 +12,27 @@ class HomeWidget extends StatelessWidget {
     final screenWidth = queryData.size.width;
     // final screenHeight = queryData.size.height;
 
+    // randomly generate data.
+    const int segments = 5;
+    final List<List<double>> randomData = List.generate(Random().nextInt(13),
+        (index) => List.generate(segments, (index) => Random().nextDouble()));
+    randomData.add(List.generate(
+        Random().nextInt(segments), (index) => Random().nextDouble()));
+    int today = randomData.length - 1;
+    randomData.addAll(List.generate(14 - randomData.length, (index) => []));
+
     return Scaffold(
       appBar: AppBar(
-          title: const Text("ML Depression"),
-        ),
+        title: const Text("ML Depression"),
+      ),
       body: Center(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(width: 250, height: 250, child: CircleProgress.getRandom()),
+            SizedBox(
+                width: 250,
+                height: 250,
+                child: CircleProgress(segments, randomData[today])),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Card(
@@ -31,7 +43,7 @@ class HomeWidget extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.all(10.0),
                       child: Text(
-                        "Previous days ",
+                        "All days ",
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -39,24 +51,37 @@ class HomeWidget extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List<Widget>.generate(7, (index) {
-                        return SizedBox(
-                            width: (screenWidth - 20) / 7,
-                            height: (screenWidth - 20) / 7,
-                            child: CircleProgress.getRandom(mode: true));
-                      }),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List<Widget>.generate(7, (index) {
-                        return SizedBox(
-                          width: (screenWidth - 20) / 7,
-                          height: (screenWidth - 20) / 7,
-                          child: CircleProgress.getRandom(mode: true, on: false),
-                        );
-                      }),
+                    ...List.generate(
+                      2,
+                      (index) => Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List<Widget>.generate(
+                          7,
+                          (innerIndex) {
+                            return SizedBox(
+                              width: (screenWidth - 20) / 7,
+                              height: (screenWidth - 20) / 7,
+                              child: Container(
+                                  decoration: today == innerIndex + (index * 7)
+                                      ? BoxDecoration(
+                                          border: Border.all(
+                                            color: Colors.blue,
+                                            width: 3,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        )
+                                      : null,
+                                  child: CircleProgress(
+                                    segments,
+                                    randomData[innerIndex + (index * 7)],
+                                    borderThickness: 0.4,
+                                    dividerThickness: 1,
+                                  )),
+                            );
+                          },
+                        ),
+                      ),
                     )
                   ],
                 ),
