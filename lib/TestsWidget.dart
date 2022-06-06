@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/src/foundation/key.dart';
 import 'package:flutter/src/widgets/framework.dart';
+import 'package:ml_depression/Tests/FaceTestWidget.dart';
 
 class TestsWidget extends StatelessWidget {
   const TestsWidget({Key? key}) : super(key: key);
 
   final items = const [
     Item("Selfie", "Take a picture of yourself.", false,
-        Icons.face_retouching_natural),
-    Item("Text", "Describe an image.", true, Icons.text_snippet),
-    Item("Voice recognistion", "Speak about a given topic.", false, Icons.mic),
+        Icons.face_retouching_natural, FaceTestWidget()),
+    Item("Text", "Describe an image.", true, Icons.text_snippet,
+        FaceTestWidget()),
+    Item("Voice recognistion", "Speak about a given topic.", false, Icons.mic,
+        FaceTestWidget()),
     Item("Questions", "Answer some questions.", false,
-        Icons.question_mark_rounded),
+        Icons.question_mark_rounded, FaceTestWidget()),
   ];
 
   @override
@@ -38,7 +41,14 @@ class ItemWidget extends StatelessWidget {
     return Column(
       children: [
         InkWell(
-          onTap: () {},
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => item.page,
+              ),
+            );
+          },
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
@@ -92,10 +102,12 @@ class ItemWidget extends StatelessWidget {
 }
 
 class Item {
-  const Item(this.title, this.description, this.state, this.icon);
+  const Item(this.title, this.description, this.state, this.icon, this.page);
 
   final String title;
   final String description;
-  final bool state; // TODO: change state to double, and use it for depression level percent of this test
+  final bool
+      state; // TODO: change state to double, and use it for depression level percent of this test
   final IconData icon;
+  final Widget page;
 }
