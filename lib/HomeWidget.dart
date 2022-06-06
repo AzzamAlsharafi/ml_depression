@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:ml_depression/TestsWidget.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 
 class HomeWidget extends StatelessWidget {
@@ -99,7 +100,10 @@ class HomeWidget extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(40.0),
               child: FloatingActionButton.extended(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(context, 
+                  MaterialPageRoute(builder: (context) => const TestsWidget()));
+                },
                 label: const Text(
                   "Start test",
                   style: TextStyle(
