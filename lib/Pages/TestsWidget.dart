@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/src/foundation/key.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:ml_depression/Tests/FaceTestWidget.dart';
+import 'package:ml_depression/Pages/FaceTestWidget.dart';
 
 class TestsWidget extends StatelessWidget {
   const TestsWidget({Key? key}) : super(key: key);

@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:ml_depression/TestsWidget.dart';
+import 'package:ml_depression/Pages/TestsWidget.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 
 class HomeWidget extends StatelessWidget {

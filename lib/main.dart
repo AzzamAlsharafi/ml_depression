@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'HomeWidget.dart';
+import 'package:ml_depression/Pages/HomeWidget.dart';
 
 void main() {
   runApp(const MyApp());
