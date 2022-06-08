@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:ml_depression/Pages/HomeWidget.dart';
+import 'package:ml_depression/Pages/StartupWidget.dart';
+import 'package:ml_depression/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  MyApp({Key? key}) : super(key: key);
+
+  Future<bool> checkStartup() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    return prefs.getBool(didStartupKey) ?? false;
+  }
 
   // This widget is the root of your application.
   @override
@@ -14,7 +23,21 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'ML Depression',
       theme: ThemeData(primarySwatch: Colors.blue, fontFamily: 'Roboto'),
-      home: const HomeWidget(),
+      home: FutureBuilder<bool>(
+        future: checkStartup(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return (snapshot.data ?? false)
+                ? const HomeWidget()
+                : const StartupWidget();
+          }
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        },
+      ),
     );
   }
 }
