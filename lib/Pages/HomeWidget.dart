@@ -26,95 +26,97 @@ class HomeWidget extends StatelessWidget {
       appBar: AppBar(
         title: const Text("ML Depression"),
       ),
-      body: Center(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-                width: 250,
-                height: 250,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [CircleProgress(segments, randomData[today]),
-                  Text("${randomData[today].length} / $segments",
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  )
-                ])),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Card(
-                margin: const EdgeInsets.all(0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Text(
-                        "All days ",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                    ),
-                    ...List.generate(
-                      2,
-                      (index) => Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List<Widget>.generate(
-                          7,
-                          (innerIndex) {
-                            return SizedBox(
-                              width: (screenWidth - 20) / 7,
-                              height: (screenWidth - 20) / 7,
-                              child: Container(
-                                  decoration: today == innerIndex + (index * 7)
-                                      ? BoxDecoration(
-                                          border: Border.all(
-                                            color: Colors.blue,
-                                            width: 3,
-                                          ),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        )
-                                      : null,
-                                  child: CircleProgress(
-                                    segments,
-                                    randomData[innerIndex + (index * 7)],
-                                    borderThickness: 0.4,
-                                    dividerThickness: 1,
-                                  )),
-                            );
-                          },
-                        ),
+      body: SingleChildScrollView(
+        child: Center(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                  width: 250,
+                  height: 250,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [CircleProgress(segments, randomData[today]),
+                    Text("${randomData[today].length} / $segments",
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
                       ),
                     )
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(40.0),
-              child: FloatingActionButton.extended(
-                onPressed: () {
-                  Navigator.push(context, 
-                  MaterialPageRoute(builder: (context) => const TestsWidget()));
-                },
-                label: const Text(
-                  "Start test",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  ])),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Card(
+                  margin: const EdgeInsets.all(0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Text(
+                          "All days ",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ),
+                      ...List.generate(
+                        2,
+                        (index) => Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List<Widget>.generate(
+                            7,
+                            (innerIndex) {
+                              return SizedBox(
+                                width: (screenWidth - 20) / 7,
+                                height: (screenWidth - 20) / 7,
+                                child: Container(
+                                    decoration: today == innerIndex + (index * 7)
+                                        ? BoxDecoration(
+                                            border: Border.all(
+                                              color: Colors.blue,
+                                              width: 3,
+                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          )
+                                        : null,
+                                    child: CircleProgress(
+                                      segments,
+                                      randomData[innerIndex + (index * 7)],
+                                      borderThickness: 0.4,
+                                      dividerThickness: 1,
+                                    )),
+                              );
+                            },
+                          ),
+                        ),
+                      )
+                    ],
                   ),
                 ),
-                icon: const Icon(Icons.play_arrow, size: 24),
               ),
-            )
-          ],
+              Padding(
+                padding: const EdgeInsets.all(40.0),
+                child: FloatingActionButton.extended(
+                  onPressed: () {
+                    Navigator.push(context, 
+                    MaterialPageRoute(builder: (context) => const TestsWidget()));
+                  },
+                  label: const Text(
+                    "Start test",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  icon: const Icon(Icons.play_arrow, size: 24),
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );

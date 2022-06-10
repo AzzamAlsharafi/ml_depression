@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ml_depression/Pages/FaceTestWidget.dart';
 import 'package:ml_depression/Pages/HomeWidget.dart';
 import 'package:ml_depression/Pages/StartupWidget.dart';
 import 'package:ml_depression/constants.dart';
@@ -27,9 +28,10 @@ class MyApp extends StatelessWidget {
         future: checkStartup(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            return (snapshot.data ?? false)
-                ? const HomeWidget()
-                : const StartupWidget();
+            return FaceTestWidget();
+            // return (snapshot.data ?? false)
+            //     ? const HomeWidget()
+            //     : const StartupWidget();
           }
           return const Scaffold(
             body: Center(
