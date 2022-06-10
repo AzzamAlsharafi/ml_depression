@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:camera_windows/camera_windows.dart';
 import 'package:camera_platform_interface/camera_platform_interface.dart';
+import 'package:image/image.dart' as img;
 
 import '../constants.dart';
 
@@ -35,6 +36,8 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
   late int cameraId;
   bool cameraReady = false; // true if camera is ready to be used
   late Size previewSize;
+  final Size boxSize = const Size(320, 320);
+  final Size previewBoxMax = const Size(900, 500);
 
   bool hasPicture = false; // true if user has already taken a picture
   String imagePath = ""; // path to the image taken by the user
@@ -59,8 +62,9 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
 
       setState(() {
         previewSize = Size(
-        event.previewWidth,
-        event.previewHeight,);
+          event.previewWidth,
+          event.previewHeight,
+        );
 
         cameraReady = true;
       });
@@ -81,7 +85,7 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
   Widget getCameraPreview() {
     if (cameraReady) {
       Widget preview = CameraPlatform.instance.buildPreview(cameraId);
-      return AspectRatio(aspectRatio: previewSize.width / previewSize.height, child: preview,);
+      return preview;
     }
     perpareCamera();
     return Container(
@@ -105,6 +109,24 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
     // controller.dispose();
     // cameraReady = false;
 
+    final imageImg = img.decodeImage(await image.readAsBytes())!;
+
+    final boxWidthBasedOnImage =
+        (imageImg.width * boxSize.width) / previewBoxMax.width;
+    final boxHeighthBasedOnImage =
+        (imageImg.height * boxSize.height) / previewBoxMax.height;
+
+    final x = (imageImg.width - boxWidthBasedOnImage) ~/ 2;
+    final y = (imageImg.height - boxHeighthBasedOnImage) ~/ 2;
+
+    final cropped = img.copyCrop(imageImg, x, y, boxWidthBasedOnImage.toInt(),
+        boxHeighthBasedOnImage.toInt());
+
+    final croppedPath = "${image.path.split(".")[0]}_cropped.jpg";
+
+    File(croppedPath)
+        .writeAsBytesSync(img.encodeJpg(cropped));
+
     final prefs = await SharedPreferences.getInstance();
     prefs.setBool(hasPictureKey, true);
 
@@ -112,6 +134,7 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
     String path = image.path;
     await image.saveTo(path);
     prefs.setString(picturePathKey, path);
+    prefs.setString(croppedPicturePathKey, croppedPath);
 
     setState(() {
       hasPicture = true;
@@ -126,6 +149,9 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
 
     File file = File(prefs.getString(picturePathKey) ?? "");
     file.delete();
+    File croppedFile = File(prefs.getString(croppedPicturePathKey) ?? "");
+    croppedFile.delete();
+    
 
     setState(() {
       hasPicture = false;
@@ -143,72 +169,104 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
       ),
       body: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Colors.grey.shade400,
-                  width: 3,
+        children: [
+          Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.grey.shade400,
+                    width: 3,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              constraints: BoxConstraints(maxHeight: 500, maxWidth: 900),
-              child: hasPicture
-                  ? Image.file(
-                      File(imagePath),
-                      scale: 1,
+                constraints: BoxConstraints(
+                    maxHeight: previewBoxMax.height,
+                    maxWidth: previewBoxMax.width),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    hasPicture
+                    ? Image.file(
+                        File(imagePath),
+                        scale: 1,
+                      )
+                    : getCameraPreview(),
+                    Container(
+                      constraints: BoxConstraints(
+                        maxHeight: boxSize.height,
+                        minHeight: boxSize.height,
+                        maxWidth: boxSize.width,
+                        minWidth: boxSize.width,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        border: Border.all(
+                          color: Colors.black,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     )
-                  : getCameraPreview(),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: FloatingActionButton.extended(
-                onPressed: () async {
-                  if (hasPicture) {
-                    showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            title: const Text("Retake picture?"),
-                            content: const Text(
-                                "Are you sure you want to replace the current picture?"),
-                            actions: [
-                              TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text("No")),
-                              TextButton(
-                                  onPressed: () async {
-                                    removePicture();
-      
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text("Yes")),
-                            ],
-                          );
-                        });
-                  } else {
-                    try {
-                      if (cameraReady) {
-                        takeAndSavePicture();
-                      } else {
-                        perpareCamera();
-                      }
-                    } catch (e) {
-                      print(e);
-                    }
-                  }
-                },
-                label: Text(hasPicture ? "Retake picture" : "Take picture"),
-                icon: const Icon(Icons.camera_alt),
+                  ],
+                ),
               ),
-            )
-          ],
-        )],
+              Padding(
+                padding: const EdgeInsets.all(0),
+                child: Text(
+                  "Make sure to put your face inside the black box.",
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: FloatingActionButton.extended(
+                  onPressed: () async {
+                    if (hasPicture) {
+                      showDialog(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              title: const Text("Retake picture?"),
+                              content: const Text(
+                                  "Are you sure you want to replace the current picture?"),
+                              actions: [
+                                TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text("No")),
+                                TextButton(
+                                    onPressed: () async {
+                                      removePicture();
+
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text("Yes")),
+                              ],
+                            );
+                          });
+                    } else {
+                      try {
+                        if (cameraReady) {
+                          takeAndSavePicture();
+                        } else {
+                          perpareCamera();
+                        }
+                      } catch (e) {
+                        print(e);
+                      }
+                    }
+                  },
+                  label: Text(hasPicture ? "Retake picture" : "Take picture"),
+                  icon: const Icon(Icons.camera_alt),
+                ),
+              )
+            ],
+          )
+        ],
       ),
     );
   }
