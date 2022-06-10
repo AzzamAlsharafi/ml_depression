@@ -28,10 +28,9 @@ class MyApp extends StatelessWidget {
         future: checkStartup(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            return FaceTestWidget();
-            // return (snapshot.data ?? false)
-            //     ? const HomeWidget()
-            //     : const StartupWidget();
+            return (snapshot.data ?? false)
+                ? const HomeWidget()
+                : const StartupWidget();
           }
           return const Scaffold(
             body: Center(

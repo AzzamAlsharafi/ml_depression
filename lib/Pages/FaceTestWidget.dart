@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -8,8 +9,6 @@ import 'package:camera_platform_interface/camera_platform_interface.dart';
 import 'package:image/image.dart' as img;
 
 import '../constants.dart';
-
-// TODO: what happens if user refuses camera permission
 
 // get the front camera
 Future<CameraDescription> getCamera() async {
@@ -41,6 +40,33 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
 
   bool hasPicture = false; // true if user has already taken a picture
   String imagePath = ""; // path to the image taken by the user
+
+  String result = "";
+
+  void runModel(String imagePath) async {
+    Process python = await Process.start("python", ["predictionscript.py"]);
+
+    final model = "my_model.h5";
+
+    python.stdout.listen((event) {
+      String out = String.fromCharCodes(event);
+      print(out);
+      if (out.contains("Input your model path:")) {
+        python.stdin.writeln(model);
+      } else if (out.contains("Input your image path:")) {
+        python.stdin.writeln(imagePath);
+      } else if (out.contains("Depressed")) {
+        print("FINAL RESULT: $out");
+        setState(() {
+          result = out;
+        });
+      }
+    });
+
+    python.stderr.listen((event) {
+      print(String.fromCharCodes(event));
+    });
+  }
 
   // prepare the camera for use
   void perpareCamera() async {
@@ -124,8 +150,7 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
 
     final croppedPath = "${image.path.split(".")[0]}_cropped.jpg";
 
-    File(croppedPath)
-        .writeAsBytesSync(img.encodeJpg(cropped));
+    File(croppedPath).writeAsBytesSync(img.encodeJpg(cropped));
 
     final prefs = await SharedPreferences.getInstance();
     prefs.setBool(hasPictureKey, true);
@@ -135,6 +160,8 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
     await image.saveTo(path);
     prefs.setString(picturePathKey, path);
     prefs.setString(croppedPicturePathKey, croppedPath);
+
+    runModel(croppedPath);
 
     setState(() {
       hasPicture = true;
@@ -151,11 +178,11 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
     file.delete();
     File croppedFile = File(prefs.getString(croppedPicturePathKey) ?? "");
     croppedFile.delete();
-    
 
     setState(() {
       hasPicture = false;
       imagePath = "";
+      result = "";
     });
   }
 
@@ -189,11 +216,11 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
                   alignment: Alignment.center,
                   children: [
                     hasPicture
-                    ? Image.file(
-                        File(imagePath),
-                        scale: 1,
-                      )
-                    : getCameraPreview(),
+                        ? Image.file(
+                            File(imagePath),
+                            scale: 1,
+                          )
+                        : getCameraPreview(),
                     Container(
                       constraints: BoxConstraints(
                         maxHeight: boxSize.height,
@@ -213,6 +240,7 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
                   ],
                 ),
               ),
+              result.isNotEmpty ? Text(result) : Container(),
               Padding(
                 padding: const EdgeInsets.all(0),
                 child: Text(
