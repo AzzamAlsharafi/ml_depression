@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:ml_depression/Pages/StartupWidget.dart';
 import 'package:ml_depression/Pages/TestsWidget.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 
@@ -25,6 +26,11 @@ class HomeWidget extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("ML Depression"),
+        actions: [
+          IconButton(onPressed: (){
+            Navigator.push(context, MaterialPageRoute(builder: (context) => StartupWidget(title: "Settings",)));
+          }, icon: const Icon(Icons.settings))
+        ],
       ),
       body: SingleChildScrollView(
         child: Center(
