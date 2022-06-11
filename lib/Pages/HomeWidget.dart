@@ -1,35 +1,150 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:ml_depression/Pages/FaceTestWidget.dart';
 import 'package:ml_depression/Pages/StartupWidget.dart';
 import 'package:ml_depression/Pages/TestsWidget.dart';
+import 'package:ml_depression/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 
-class HomeWidget extends StatelessWidget {
-  const HomeWidget({Key? key}) : super(key: key);
+class HomeWidget extends StatefulWidget {
+  const HomeWidget(this.prefs, {Key? key}) : super(key: key);
+
+  final SharedPreferences prefs;
+
+  @override
+  State<HomeWidget> createState() => _HomeWidgetState();
+}
+
+class _HomeWidgetState extends State<HomeWidget> {
+  int segments = 5;
+  int todayIndex = 0;
+  List<int> segemntsPerDay =
+      List.generate(14, (index) => 5); // segments for each day
+  List<List<double>> values = List.generate(14, (index) => []);
+  List<TimeOfDay> times = [];
+
+  bool canDoTest = true;
+  String clockText = "";
+
+  final maxSmallCircleSize = 150.0;
+
+  void load() {
+    segments = widget.prefs.getInt(numTestsKey) ?? segments;
+
+    final startDay =
+        DateTime.parse(widget.prefs.getString(startingDayKey) ?? "");
+
+    todayIndex = DateUtils.dateOnly(DateTime.now()).difference(startDay).inDays;
+
+    for (int i = 0; i < 14; i++) {
+      segemntsPerDay[i] =
+          widget.prefs.getInt("$segmentsPerDayKey$i") ?? segments;
+
+      final stringValues = widget.prefs.getStringList("$valuesKey$i");
+      values[i] = stringValues == null
+          ? values[i]
+          : stringValues.map((e) => double.parse(e)).toList();
+    }
+
+    segemntsPerDay[todayIndex] = segments;
+    widget.prefs.setInt("$segmentsPerDayKey$todayIndex", segments);
+
+    final timesString = widget.prefs.getString(timesKey);
+    if (timesString != null && timesString.isNotEmpty) {
+      times = timesString
+          .replaceAll("[", "")
+          .replaceAll("]", "")
+          .replaceAll("TimeOfDay(", "")
+          .replaceAll(")", "")
+          .split(", ")
+          .map((String e) => TimeOfDay(
+              hour: int.parse(e.split(":")[0]),
+              minute: int.parse(e.split(":")[1])))
+          .toList()
+          .getRange(0, segments)
+          .toList();
+    }
+
+    getTime();
+  }
+
+  double getDoubleTime(TimeOfDay timeOfDay) {
+    return timeOfDay.hour.toDouble() + (timeOfDay.minute.toDouble() / 60.0);
+  }
+
+  TimeOfDay fromDoubleTime(double time) {
+    return TimeOfDay(
+        hour: time.floor(), minute: ((time - time.floor()) * 60).toInt());
+  }
+
+  void getTime() {
+    final sorter = ((a, b) => getDoubleTime(a).compareTo(getDoubleTime(b)));
+
+    final now = TimeOfDay.now();
+
+    int prevIndex;
+
+    if (times.contains(now)) {
+      times.sort(sorter);
+      final index = times.indexOf(now);
+
+      prevIndex = index;
+    } else {
+      times.add(now);
+      times.sort(sorter);
+      final index = times.indexOf(now);
+      times.remove(now);
+
+      prevIndex = max(index - 1, 0);
+    }
+
+    print(times);
+    print(prevIndex);
+    print(times[prevIndex]);
+
+    if (values[todayIndex].length > prevIndex) {
+      canDoTest = false;
+      if (prevIndex >= times.length - 1) {
+        clockText = "You have done all tests for today.";
+      } else {
+        clockText = "Upcoming test on ${times[prevIndex + 1].format(context)}";
+      }
+    } else {
+      canDoTest = true;
+      clockText =
+          "${times[values[todayIndex].length].format(context)} test is open.";
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    load();
+
+    print("BUILDING THE BUILDE");
+
     MediaQueryData queryData = MediaQuery.of(context);
     final screenWidth = queryData.size.width;
     // final screenHeight = queryData.size.height;
-
-    // randomly generate data.
-    const int segments = 5;
-    final List<List<double>> randomData = List.generate(Random().nextInt(13),
-        (index) => List.generate(segments, (index) => Random().nextDouble()));
-    randomData.add(List.generate(
-        Random().nextInt(segments), (index) => Random().nextDouble()));
-    int today = randomData.length - 1;
-    randomData.addAll(List.generate(14 - randomData.length, (index) => []));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text("ML Depression"),
         actions: [
-          IconButton(onPressed: (){
-            Navigator.push(context, MaterialPageRoute(builder: (context) => StartupWidget(title: "Settings",)));
-          }, icon: const Icon(Icons.settings))
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const StartupWidget(
+                    title: "Settings",
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.settings),
+          )
         ],
       ),
       body: SingleChildScrollView(
@@ -40,10 +155,10 @@ class HomeWidget extends StatelessWidget {
               SizedBox(
                   width: 250,
                   height: 250,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [CircleProgress(segments, randomData[today]),
-                    Text("${randomData[today].length} / $segments",
+                  child: Stack(alignment: Alignment.center, children: [
+                    CircleProgress(segments, values[todayIndex]),
+                    Text(
+                      "${values[todayIndex].length} / $segments",
                       style: const TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,
@@ -52,65 +167,95 @@ class HomeWidget extends StatelessWidget {
                   ])),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Card(
-                  margin: const EdgeInsets.all(0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Text(
-                          "All days ",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade700,
+                child: SizedBox(
+                  width:
+                      min((screenWidth - 20) + 40, maxSmallCircleSize * 7 + 40),
+                  child: Card(
+                    margin: const EdgeInsets.all(0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 10.0, horizontal: 25.0),
+                          child: Text(
+                            "All days ",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade700,
+                            ),
                           ),
                         ),
-                      ),
-                      ...List.generate(
-                        2,
-                        (index) => Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List<Widget>.generate(
-                            7,
-                            (innerIndex) {
-                              return SizedBox(
-                                width: (screenWidth - 20) / 7,
-                                height: (screenWidth - 20) / 7,
-                                child: Container(
-                                    decoration: today == innerIndex + (index * 7)
-                                        ? BoxDecoration(
-                                            border: Border.all(
-                                              color: Colors.blue,
-                                              width: 3,
-                                            ),
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          )
-                                        : null,
-                                    child: CircleProgress(
-                                      segments,
-                                      randomData[innerIndex + (index * 7)],
-                                      borderThickness: 0.4,
-                                      dividerThickness: 1,
-                                    )),
-                              );
-                            },
+                        ...List.generate(
+                          2,
+                          (index) => Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List<Widget>.generate(
+                              7,
+                              (innerIndex) {
+                                return SizedBox(
+                                  width: min((screenWidth - 20) / 7,
+                                      maxSmallCircleSize),
+                                  height: min((screenWidth - 20) / 7,
+                                      maxSmallCircleSize),
+                                  child: Container(
+                                      decoration:
+                                          todayIndex == innerIndex + (index * 7)
+                                              ? BoxDecoration(
+                                                  border: Border.all(
+                                                    color: Colors.blue,
+                                                    width: 3,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                )
+                                              : null,
+                                      child: CircleProgress(
+                                        segemntsPerDay[
+                                            innerIndex + (index * 7)],
+                                        values[innerIndex + (index * 7)],
+                                        borderThickness: 0.25,
+                                        dividerThickness: 5,
+                                      )),
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      )
-                    ],
+                        )
+                      ],
+                    ),
                   ),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.all(40.0),
+                padding: const EdgeInsets.fromLTRB(0, 24, 0, 0),
+                child: Text(
+                  clockText,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24.0),
                 child: FloatingActionButton.extended(
-                  onPressed: () {
-                    Navigator.push(context, 
-                    MaterialPageRoute(builder: (context) => const TestsWidget()));
-                  },
+                  heroTag: "myheroaca",
+                  backgroundColor: canDoTest ? Colors.blue : Colors.grey,
+                  onPressed: canDoTest ? () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FaceTestWidget(),
+                      ),
+                    ).then((value) {
+                      setState(() {
+                        load();
+                      });
+                    });
+                  } : null,
                   label: const Text(
                     "Start test",
                     style: TextStyle(

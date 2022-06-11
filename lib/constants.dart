@@ -6,3 +6,7 @@ const String croppedPicturePathKey = "croppedPicturePath";
 const String didStartupKey = "didStartup";
 const String numTestsKey = "numTests";
 const String timesKey = "times";
+
+const String startingDayKey = "startingDay";
+const String segmentsPerDayKey = "segmentsPerDay"; // store the segments for each day in their own seperate entry
+const String valuesKey = "values"; // store the values for each day in their own seperate entry

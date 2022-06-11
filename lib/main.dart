@@ -12,10 +12,10 @@ void main() {
 class MyApp extends StatelessWidget {
   MyApp({Key? key}) : super(key: key);
 
-  Future<bool> checkStartup() async {
+  Future<SharedPreferences> getPrefs() async {
     final prefs = await SharedPreferences.getInstance();
 
-    return prefs.getBool(didStartupKey) ?? false;
+    return prefs;
   }
 
   // This widget is the root of your application.
@@ -24,12 +24,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'ML Depression',
       theme: ThemeData(primarySwatch: Colors.blue, fontFamily: 'Roboto'),
-      home: FutureBuilder<bool>(
-        future: checkStartup(),
+      home: FutureBuilder<SharedPreferences>(
+        future: getPrefs(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-            return (snapshot.data ?? false)
-                ? const HomeWidget()
+            final prefs = snapshot.data!;
+            return (prefs.getBool(didStartupKey) ?? false)
+                ? HomeWidget(prefs)
                 : const StartupWidget();
           }
           return const Scaffold(

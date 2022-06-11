@@ -44,9 +44,23 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
   String result = "";
 
   void runModel(String imagePath) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return const AlertDialog(
+          title: Text("Result"),
+          content: SizedBox(
+              width: 50,
+              height: 50,
+              child: Center(child: CircularProgressIndicator())),
+        );
+      },
+    );
+
     Process python = await Process.start("python", ["predictionscript.py"]);
 
-    final model = "my_model.h5";
+    const model = "my_model.h5";
 
     python.stdout.listen((event) {
       String out = String.fromCharCodes(event);
@@ -57,15 +71,58 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
         python.stdin.writeln(imagePath);
       } else if (out.contains("Depressed")) {
         print("FINAL RESULT: $out");
-        setState(() {
-          result = out;
-        });
+
+        result = out;
+
+        if (result.isNotEmpty) {
+          saveTestResult();
+
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text("Result"),
+                content: Text(result),
+                actions: [
+                  TextButton(
+                    child: const Text("OK"),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.pop(context);
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        }
       }
     });
 
     python.stderr.listen((event) {
       print(String.fromCharCodes(event));
     });
+  }
+
+  void saveTestResult() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final startDay = DateTime.parse(prefs.getString(startingDayKey) ?? "");
+
+    final todayIndex =
+        DateUtils.dateOnly(DateTime.now()).difference(startDay).inDays;
+
+    final stringValues = prefs.getStringList("$valuesKey$todayIndex");
+    final values = stringValues == null
+        ? []
+        : stringValues.map((e) => double.parse(e)).toList();
+
+    values.add(result.contains("Not Depressed") ? 1.0 : 0.0);
+
+    prefs.setStringList(
+        "$valuesKey$todayIndex", values.map((e) => e.toString()).toList());
   }
 
   // prepare the camera for use
@@ -161,8 +218,6 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
     prefs.setString(picturePathKey, path);
     prefs.setString(croppedPicturePathKey, croppedPath);
 
-    runModel(croppedPath);
-
     setState(() {
       hasPicture = true;
       imagePath = path;
@@ -184,6 +239,17 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
       imagePath = "";
       result = "";
     });
+  }
+
+  // save the picture and get result.
+  void confrimPicture() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final path = prefs.getString(croppedPicturePathKey);
+
+    if (path != null) {
+      runModel(path);
+    }
   }
 
   @override
@@ -213,34 +279,50 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
                     maxHeight: previewBoxMax.height,
                     maxWidth: previewBoxMax.width),
                 child: Stack(
-                  alignment: Alignment.center,
+                  alignment: Alignment.bottomCenter,
                   children: [
-                    hasPicture
-                        ? Image.file(
-                            File(imagePath),
-                            scale: 1,
-                          )
-                        : getCameraPreview(),
-                    Container(
-                      constraints: BoxConstraints(
-                        maxHeight: boxSize.height,
-                        minHeight: boxSize.height,
-                        maxWidth: boxSize.width,
-                        minWidth: boxSize.width,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        border: Border.all(
-                          color: Colors.black,
-                          width: 2,
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        hasPicture
+                            ? Image.file(
+                                File(imagePath),
+                                scale: 1,
+                              )
+                            : getCameraPreview(),
+                        Container(
+                          constraints: BoxConstraints(
+                            maxHeight: boxSize.height,
+                            minHeight: boxSize.height,
+                            maxWidth: boxSize.width,
+                            minWidth: boxSize.width,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            border: Border.all(
+                              color: Colors.black,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    )
+                      ],
+                    ),
+                    hasPicture
+                        ? Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: FloatingActionButton.extended(
+                              onPressed: () {
+                                confrimPicture();
+                              },
+                              icon: Icon(Icons.check),
+                              label: Text("Confirm"),
+                            ),
+                          )
+                        : Container(),
                   ],
                 ),
               ),
-              result.isNotEmpty ? Text(result) : Container(),
               Padding(
                 padding: const EdgeInsets.all(0),
                 child: Text(
@@ -251,6 +333,7 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: FloatingActionButton.extended(
+                  heroTag: "myheroaca",
                   onPressed: () async {
                     if (hasPicture) {
                       showDialog(

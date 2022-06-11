@@ -4,7 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ml_depression/Pages/HomeWidget.dart';
 
 class StartupWidget extends StatefulWidget {
-  const StartupWidget({this.title = "Startup page", Key? key}) : super(key: key);
+  const StartupWidget({this.title = "Startup page", Key? key})
+      : super(key: key);
 
   final String title;
 
@@ -118,9 +119,11 @@ class _StartupWidgetState extends State<StartupWidget> {
                     SizedBox(
                       width: 75,
                       child: TextField(
-                        controller: setText ? TextEditingController(
+                        controller: setText
+                            ? TextEditingController(
                                 text: tests.toString(),
-                              ) : null,
+                              )
+                            : null,
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
                         maxLength: 1,
@@ -249,6 +252,7 @@ class _StartupWidgetState extends State<StartupWidget> {
           height: 30,
         ),
         FloatingActionButton.extended(
+            heroTag: "myheroaca",
             onPressed: () async {
               if (tests > 0) {
                 final prefs = await SharedPreferences.getInstance();
@@ -256,10 +260,14 @@ class _StartupWidgetState extends State<StartupWidget> {
                 prefs.setInt(numTestsKey, tests);
                 prefs.setString(timesKey, times.toString());
 
-                Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const HomeWidget()));
+                // save starting day if this is the first time for startup
+                if(widget.title != "Settings"){
+                prefs.setString(startingDayKey,
+                    DateUtils.dateOnly(DateTime.now()).toString());
+                }
+                
+                Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (context) => HomeWidget(prefs)));
               }
             },
             label: const Text("Save"))
