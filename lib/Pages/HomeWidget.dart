@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:ml_depression/Pages/FaceTestWidget.dart';
+import 'package:ml_depression/Pages/ReportWidget.dart';
 import 'package:ml_depression/Pages/StartupWidget.dart';
 import 'package:ml_depression/Pages/TestsWidget.dart';
 import 'package:ml_depression/constants.dart';
@@ -26,6 +27,7 @@ class _HomeWidgetState extends State<HomeWidget> {
   List<TimeOfDay> times = [];
 
   bool canDoTest = true;
+  bool doneTests = false;
   String clockText = "";
 
   final maxSmallCircleSize = 150.0;
@@ -80,6 +82,13 @@ class _HomeWidgetState extends State<HomeWidget> {
   }
 
   void getTime() {
+    if (todayIndex == 13 && values[todayIndex].length == segments) {
+      canDoTest = false;
+      doneTests = true;
+      clockText = "You have completed all tests!";
+      return;
+    }
+
     final sorter = ((a, b) => getDoubleTime(a).compareTo(getDoubleTime(b)));
 
     final now = TimeOfDay.now();
@@ -131,21 +140,21 @@ class _HomeWidgetState extends State<HomeWidget> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("ML Depression"),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const StartupWidget(
-                    title: "Settings",
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.settings),
-          )
-        ],
+        // actions: [
+        //   IconButton(
+        //     onPressed: () {
+        //       Navigator.push(
+        //         context,
+        //         MaterialPageRoute(
+        //           builder: (context) => const StartupWidget(
+        //             title: "Settings",
+        //           ),
+        //         ),
+        //       );
+        //     },
+        //     icon: const Icon(Icons.settings),
+        //   )
+        // ],
       ),
       body: SingleChildScrollView(
         child: Center(
@@ -165,65 +174,68 @@ class _HomeWidgetState extends State<HomeWidget> {
                       ),
                     )
                   ])),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: SizedBox(
-                  width:
-                      min((screenWidth - 20) + 40, maxSmallCircleSize * 7 + 40),
-                  child: Card(
-                    margin: const EdgeInsets.all(0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 10.0, horizontal: 25.0),
-                          child: Text(
-                            "All days ",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade700,
+              Hero(
+                tag: "alldays",
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: SizedBox(
+                    width:
+                        min((screenWidth - 20) + 40, maxSmallCircleSize * 7 + 40),
+                    child: Card(
+                      margin: const EdgeInsets.all(0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 10.0, horizontal: 25.0),
+                            child: Text(
+                              "All days ",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey.shade700,
+                              ),
                             ),
                           ),
-                        ),
-                        ...List.generate(
-                          2,
-                          (index) => Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List<Widget>.generate(
-                              7,
-                              (innerIndex) {
-                                return SizedBox(
-                                  width: min((screenWidth - 20) / 7,
-                                      maxSmallCircleSize),
-                                  height: min((screenWidth - 20) / 7,
-                                      maxSmallCircleSize),
-                                  child: Container(
-                                      decoration:
-                                          todayIndex == innerIndex + (index * 7)
-                                              ? BoxDecoration(
-                                                  border: Border.all(
-                                                    color: Colors.blue,
-                                                    width: 3,
-                                                  ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(10),
-                                                )
-                                              : null,
-                                      child: CircleProgress(
-                                        segemntsPerDay[
-                                            innerIndex + (index * 7)],
-                                        values[innerIndex + (index * 7)],
-                                        borderThickness: 0.25,
-                                        dividerThickness: 5,
-                                      )),
-                                );
-                              },
+                          ...List.generate(
+                            2,
+                            (index) => Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List<Widget>.generate(
+                                7,
+                                (innerIndex) {
+                                  return SizedBox(
+                                    width: min((screenWidth - 20) / 7,
+                                        maxSmallCircleSize),
+                                    height: min((screenWidth - 20) / 7,
+                                        maxSmallCircleSize),
+                                    child: Container(
+                                        decoration:
+                                            todayIndex == innerIndex + (index * 7)
+                                                ? BoxDecoration(
+                                                    border: Border.all(
+                                                      color: Colors.blue,
+                                                      width: 3,
+                                                    ),
+                                                    borderRadius:
+                                                        BorderRadius.circular(10),
+                                                  )
+                                                : null,
+                                        child: CircleProgress(
+                                          segemntsPerDay[
+                                              innerIndex + (index * 7)],
+                                          values[innerIndex + (index * 7)],
+                                          borderThickness: 0.25,
+                                          dividerThickness: 5,
+                                        )),
+                                  );
+                                },
+                              ),
                             ),
-                          ),
-                        )
-                      ],
+                          )
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -241,30 +253,53 @@ class _HomeWidgetState extends State<HomeWidget> {
               ),
               Padding(
                 padding: const EdgeInsets.all(24.0),
-                child: FloatingActionButton.extended(
-                  heroTag: "myheroaca",
-                  backgroundColor: canDoTest ? Colors.blue : Colors.grey,
-                  onPressed: canDoTest ? () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FaceTestWidget("$todayIndex ${values[todayIndex].length}"),
+                child: doneTests
+                    ? FloatingActionButton.extended(
+                        heroTag: "myheroaca",
+                        onPressed:() {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ReportWidget(segments, segemntsPerDay, values, times, screenWidth),
+                                  ),
+                                );
+                              },
+                        label: const Text(
+                          "Open report",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        icon: const Icon(Icons.text_snippet, size: 24),
+                      )
+                    : FloatingActionButton.extended(
+                        heroTag: "myheroaca",
+                        backgroundColor: canDoTest ? Colors.blue : Colors.grey,
+                        onPressed: canDoTest
+                            ? () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => FaceTestWidget(
+                                        "$todayIndex ${values[todayIndex].length}"),
+                                  ),
+                                ).then((value) {
+                                  setState(() {
+                                    load();
+                                  });
+                                });
+                              }
+                            : null,
+                        label: const Text(
+                          "Start test",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        icon: const Icon(Icons.play_arrow, size: 24),
                       ),
-                    ).then((value) {
-                      setState(() {
-                        load();
-                      });
-                    });
-                  } : null,
-                  label: const Text(
-                    "Start test",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  icon: const Icon(Icons.play_arrow, size: 24),
-                ),
               )
             ],
           ),
