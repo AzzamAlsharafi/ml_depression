@@ -248,7 +248,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const FaceTestWidget(),
+                        builder: (context) => FaceTestWidget("$todayIndex ${values[todayIndex].length}"),
                       ),
                     ).then((value) {
                       setState(() {

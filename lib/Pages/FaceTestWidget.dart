@@ -25,7 +25,9 @@ Future<CameraDescription> getCamera() async {
 }
 
 class FaceTestWidget extends StatefulWidget {
-  const FaceTestWidget({Key? key}) : super(key: key);
+  const FaceTestWidget(this.testName, {Key? key}) : super(key: key);
+
+  final String testName; // name of the test. It consists of the day and number of test.
 
   @override
   State<FaceTestWidget> createState() => _FaceTestWidgetState();
@@ -179,7 +181,7 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
   // check if the user has already taken a picture, if so then update hasPicture and imagePath.
   void checkIfHasPicture() async {
     final prefs = await SharedPreferences.getInstance();
-    hasPicture = prefs.getBool(hasPictureKey) ?? false;
+    hasPicture = prefs.getBool("$hasPictureKey${widget.testName}") ?? false;
 
     if (hasPicture) {
       imagePath = prefs.getString(picturePathKey) ?? "";
@@ -210,7 +212,7 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
     File(croppedPath).writeAsBytesSync(img.encodeJpg(cropped));
 
     final prefs = await SharedPreferences.getInstance();
-    prefs.setBool(hasPictureKey, true);
+    prefs.setBool("$hasPictureKey${widget.testName}", true);
 
     // final directory = await getApplicationDocumentsDirectory();
     String path = image.path;
@@ -227,7 +229,7 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
   // remove the picture.
   void removePicture() async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setBool(hasPictureKey, false);
+    prefs.setBool("$hasPictureKey${widget.testName}", false);
 
     File file = File(prefs.getString(picturePathKey) ?? "");
     file.delete();
