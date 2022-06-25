@@ -27,7 +27,8 @@ Future<CameraDescription> getCamera() async {
 class FaceTestWidget extends StatefulWidget {
   const FaceTestWidget(this.testName, {Key? key}) : super(key: key);
 
-  final String testName; // name of the test. It consists of the day and number of test.
+  final String
+      testName; // name of the test. It consists of the day and number of test.
 
   @override
   State<FaceTestWidget> createState() => _FaceTestWidgetState();
@@ -46,6 +47,8 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
   String result = "";
 
   void runModel(String imagePath) async {
+    String activity = await requestActivity();
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -77,7 +80,7 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
         result = out;
 
         if (result.isNotEmpty) {
-          saveTestResult();
+          saveTestResult(activity);
 
           showDialog(
             context: context,
@@ -108,7 +111,42 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
     });
   }
 
-  void saveTestResult() async {
+  Future<String> requestActivity() async {
+    String activity = "";
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("What activity were you doing just now?"),
+          content: TextField(
+            decoration: const InputDecoration(
+              hintText: "Activity",
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              activity = value;
+            },
+          ),
+          actions: [
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    return activity;
+  }
+
+  void saveTestResult(String activity) async {
+    activity = activity.toLowerCase().trim();
+
     final prefs = await SharedPreferences.getInstance();
 
     final startDay = DateTime.parse(prefs.getString(startingDayKey) ?? "");
@@ -121,10 +159,25 @@ class _FaceTestWidgetState extends State<FaceTestWidget> {
         ? []
         : stringValues.map((e) => double.parse(e)).toList();
 
+    final stringActivityValues = prefs.getStringList("$activityValuesKey$activity");
+    final activityValues = stringActivityValues == null
+        ? []
+        : stringActivityValues.map((e) => double.parse(e)).toList();
+
+    final activies = prefs.getStringList(activitiesKey) ?? [];
+    if(!activies.contains(activity)){
+      activies.add(activity);
+    }
+
+
     values.add(result.contains("Not Depressed") ? 1.0 : 0.0);
+    activityValues.add(result.contains("Not Depressed") ? 1.0 : 0.0);
 
     prefs.setStringList(
         "$valuesKey$todayIndex", values.map((e) => e.toString()).toList());
+    prefs.setStringList("$activityValuesKey$activity", activityValues.map((e) => e.toString()).toList());
+
+    prefs.setStringList(activitiesKey, activies);
   }
 
   // prepare the camera for use

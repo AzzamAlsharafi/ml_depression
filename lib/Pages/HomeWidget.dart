@@ -25,6 +25,7 @@ class _HomeWidgetState extends State<HomeWidget> {
       List.generate(14, (index) => 5); // segments for each day
   List<List<double>> values = List.generate(14, (index) => []);
   List<TimeOfDay> times = [];
+  Map<String, List<double>> activityValues = {};
 
   bool canDoTest = true;
   bool doneTests = false;
@@ -68,6 +69,16 @@ class _HomeWidgetState extends State<HomeWidget> {
           .getRange(0, segments)
           .toList();
     }
+
+    final activities = widget.prefs.getStringList(activitiesKey) ?? [];
+    for (var a in activities) {
+      final aValues = widget.prefs.getStringList("$activityValuesKey$a") ?? [];
+      activityValues[a] = aValues
+          .map((e) => double.parse(e))
+          .toList();
+    }
+
+
 
     getTime();
   }
@@ -256,7 +267,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => ReportWidget(segments, segemntsPerDay, values, times, screenWidth),
+                                    builder: (context) => ReportWidget(segments, segemntsPerDay, values, times, activityValues, screenWidth),
                                   ),
                                 );
                               },

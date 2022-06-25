@@ -5,7 +5,7 @@ import 'package:ml_depression/Pages/HomeWidget.dart';
 
 class ReportWidget extends StatelessWidget {
   const ReportWidget(this.segments, this.segemntsPerDay, this.values,
-      this.times, this.screenWidth,
+      this.times, this.activityValues, this.screenWidth,
       {Key? key})
       : super(key: key);
 
@@ -13,6 +13,7 @@ class ReportWidget extends StatelessWidget {
   final List<int> segemntsPerDay;
   final List<List<double>> values;
   final List<TimeOfDay> times;
+  final Map<String, List<double>> activityValues;
 
   final double screenWidth;
 
@@ -44,14 +45,14 @@ class ReportWidget extends StatelessWidget {
     return [
       StatsData(Icons.percent,
           "Overall depression rate: %${(overall * 100).toStringAsFixed(1)}"),
-      StatsData(
-          Icons.arrow_downward, "Lowest depression rate on a day: %${lowest * 100}"),
-      StatsData(
-          Icons.arrow_upward, "Highest depression rate on a day: %${highest * 100}"),
+      StatsData(Icons.arrow_downward,
+          "Lowest depression rate on a day: %${lowest * 100}"),
+      StatsData(Icons.arrow_upward,
+          "Highest depression rate on a day: %${highest * 100}"),
     ];
   }
 
-  List<StatsData> getAdvices(BuildContext context){
+  List<StatsData> getAdvices(BuildContext context) {
     double overall = 0;
 
     List<double> timesRates = List.generate(segments, (index) => 0.0);
@@ -71,27 +72,105 @@ class ReportWidget extends StatelessWidget {
       timesRates[i] = 1 - timesRates[i];
     }
 
+    Map<String, double> activityRate = {};
+
+    for (var act in activityValues.keys) {
+      activityRate[act] = activityValues[act]!.reduce((a, b) => a + b) /
+          activityValues[act]!.length;
+      activityRate[act] = 1 - activityRate[act]!;
+    }
+
     overall /= values.length;
 
     overall = 1 - overall;
 
     final List<StatsData> advices = [];
 
-    if(overall <= 0.35){
-      advices.add(const StatsData(Icons.sentiment_satisfied_alt, "Your depression rate is normal. You mostly aren't depressed."));
-    } else if(overall <= 0.65){
-      advices.add(const StatsData(Icons.sentiment_neutral, "Your depression rate is a bit above normal. You may be a bit depressed, but still not to a dangerous rate."));
+    if (overall <= 0.35) {
+      advices.add(const StatsData(Icons.sentiment_satisfied_alt,
+          "Your depression rate is normal. You mostly aren't depressed."));
+    } else if (overall <= 0.65) {
+      advices.add(const StatsData(Icons.sentiment_neutral,
+          "Your depression rate is a bit above normal. You may be a bit depressed, but still not to a dangerous rate."));
     } else {
-      advices.add(const StatsData(Icons.sentiment_very_dissatisfied, "Your depression rate is high. You may have depression, and should seek professional help."));
+      advices.add(const StatsData(Icons.sentiment_very_dissatisfied,
+          "Your depression rate is high. You may have depression, and should seek professional help."));
     }
 
-    final lowestIndex = timesRates.indexOf(timesRates.reduce((a, b) => min(a, b)));
-    final highestIndex = timesRates.indexOf(timesRates.reduce((a, b) => max(a, b)));
+    final lowestIndex =
+        timesRates.indexOf(timesRates.reduce((a, b) => min(a, b)));
+    final highestIndex =
+        timesRates.indexOf(timesRates.reduce((a, b) => max(a, b)));
 
-    advices.add(StatsData(Icons.sunny, "Your depression rate is lowest at ${times[lowestIndex].format(context)}. You should think about what is special about this time, and apply it to the rest of your day."));
-    advices.add(StatsData(Icons.thunderstorm, "Your depression rate is highest at ${times[highestIndex].format(context)}. You should think about what is it the makes your depression rate raise on this specific time of the day, and try to avoide it as much as possible."));
+    advices.add(StatsData(Icons.sunny,
+        "Your depression rate is lowest at ${times[lowestIndex].format(context)}. You should think about what is special about this time, and apply it to the rest of your day."));
+    advices.add(StatsData(Icons.thunderstorm,
+        "Your depression rate is highest at ${times[highestIndex].format(context)}. You should think about what is it the makes your depression rate raise on this specific time of the day, and try to avoide it as much as possible."));
+
+    final lowest =
+        getLowestActivity(Map.from(activityValues), Map.from(activityRate));
+    final highest =
+        getHighestActivity(Map.from(activityValues), Map.from(activityRate));
+
+    if (lowest != null) {
+      advices.add(lowest);
+    }
+
+    if (highest != null) {
+      advices.add(highest);
+    }
 
     return advices;
+  }
+
+  StatsData? getLowestActivity(Map actValues, Map actRates) {
+    if (actValues.isEmpty) {
+      return null;
+    }
+
+    String lowestActivity = "";
+    double lowestRate = 1;
+
+    for (var a in actRates.keys) {
+      if (actRates[a] < lowestRate) {
+        lowestRate = actRates[a];
+        lowestActivity = a;
+      }
+    }
+
+    if (actValues[lowestActivity]!.length > 4) {
+      return StatsData(Icons.sentiment_satisfied_alt_outlined,
+          "You're least depressed when doing $lowestActivity. You should try to do it more often.");
+    } else {
+      actValues.remove(lowestActivity);
+      actRates.remove(lowestActivity);
+      return getLowestActivity(actValues, actRates);
+    }
+  }
+
+  StatsData? getHighestActivity(Map actValues, Map actRates) {
+    if (actValues.isEmpty) {
+      return null;
+    }
+
+    String highestActivity = "";
+    double highestRate = 0;
+
+    for (var a in actRates.keys) {
+      if (actRates[a] > highestRate) {
+        highestRate = actRates[a];
+        highestActivity = a;
+      }
+    }
+
+    if (actValues[highestActivity]!.length > 4) {
+      return StatsData(Icons.sentiment_dissatisfied_outlined,
+          "You're most depressed when doing $highestActivity. You should try to do it less if possible.");
+    } else {
+      actValues.remove(highestActivity);
+      actRates.remove(highestActivity);
+      return getHighestActivity(actValues, actRates);
+    }
   }
 
   @override
@@ -196,7 +275,8 @@ class ReportWidget extends StatelessWidget {
                           ...getStats()
                               .map(
                                 (e) => Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20),
                                   child: StatsWidget(e),
                                 ),
                               )
@@ -232,7 +312,8 @@ class ReportWidget extends StatelessWidget {
                           ...getAdvices(context)
                               .map(
                                 (e) => Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20),
                                   child: StatsWidget(e),
                                 ),
                               )
