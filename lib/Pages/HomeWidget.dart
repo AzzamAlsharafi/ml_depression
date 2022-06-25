@@ -106,12 +106,8 @@ class _HomeWidgetState extends State<HomeWidget> {
       final index = times.indexOf(now);
       times.remove(now);
 
-      prevIndex = max(index - 1, 0);
+      prevIndex = index - 1;
     }
-
-    print(times);
-    print(prevIndex);
-    print(times[prevIndex]);
 
     if (values[todayIndex].length > prevIndex) {
       canDoTest = false;

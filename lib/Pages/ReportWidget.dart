@@ -23,16 +23,10 @@ class ReportWidget extends StatelessWidget {
     double lowest = 1;
     double highest = 0;
 
-    List<double> timesRates = List.generate(segments, (index) => 0.0);
-
     for (var list in values) {
       final thisRate = list.reduce((a, b) => a + b) / list.length;
 
       overall += thisRate;
-
-      for (int i = 0; i < timesRates.length; i++) {
-        timesRates[i] += list[i];
-      }
 
       if (thisRate < lowest) {
         lowest = thisRate;
@@ -45,9 +39,7 @@ class ReportWidget extends StatelessWidget {
 
     overall /= values.length;
 
-    for (int i = 0; i < segments; i++) {
-      timesRates[i] /= segments;
-    }
+    overall = 1 - overall;
 
     return [
       StatsData(Icons.percent,
@@ -74,11 +66,14 @@ class ReportWidget extends StatelessWidget {
       }
     }
 
+    for (int i = 0; i < segments; i++) {
+      timesRates[i] /= 14;
+      timesRates[i] = 1 - timesRates[i];
+    }
+
     overall /= values.length;
 
-    for (int i = 0; i < segments; i++) {
-      timesRates[i] /= segments;
-    }
+    overall = 1 - overall;
 
     final List<StatsData> advices = [];
 
